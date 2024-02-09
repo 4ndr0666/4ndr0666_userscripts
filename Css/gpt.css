@@ -1,0 +1,84 @@
+/* ==UserStyle==
+@name         Gpt-4ndr0666 Dark Mode Split Screen
+@namespace    USO Archive
+@description  Dynamic split screen with custom dark mode colors and layout
+@version      1
+@license      M.I.T
+@preprocessor uso
+==/UserStyle== */
+
+@-moz-document domain("chat.openai.com") {
+    :root {
+        --bg-primary: #000000;
+        --text-primary: #15FFFF; /* Cyan color close to your preference */
+        --text-secondary: #11D1D1; /* A darker shade of cyan for contrast */
+        --border-primary: #272727;
+        --bg-secondary: #1a1a1a;
+        --bg-tertiary: #484848;
+        --link: #0091ff;
+        --link-hover: #5d90be;
+        --border-heavy: rgba(50, 50, 50, 0.2);
+    }
+
+    body {
+        display: flex;
+        flex-direction: column; /* Changed to column for overall page structure */
+        margin: 0;
+        padding: 0;
+        font-family: 'Open Sans', sans-serif;
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+        width: 100vw;
+        height: 100vh;
+    }
+
+    main {
+        display: flex; /* Using flexbox to create the split screen */
+        height: 100%;
+    }
+
+    .left-pane,
+    .right-pane {
+        flex: 1; /* Each pane flexes equally */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        border: 1px solid var(--border-primary);
+    }
+
+    .left-pane {
+        background-color: var(--bg-secondary);
+    }
+
+    .right-pane {
+        background-color: var(--bg-tertiary);
+    }
+
+    a {
+        color: var(--link);
+    }
+
+    a:hover {
+        color: var(--link-hover);
+    }
+
+    hr {
+        border-color: var(--border-heavy);
+    }
+
+    /* Selection color */
+    ::selection {
+        background: #464646;
+        color: var(--text-primary);
+    }
+
+    /* Ensure the left and right panes each take up half the screen */
+    @media (min-width: 768px) {
+        .left-pane,
+        .right-pane {
+            flex-basis: 50%;
+        }
+    }
+}
+

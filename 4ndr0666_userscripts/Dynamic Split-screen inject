@@ -1,31 +1,32 @@
 // ==UserScript==
-// @name         Dynamic Split-Screen Layout Injector
+// @name         Custom Style Injector for chat.openai.com
 // @namespace    http://tampermonkey.net/
 // @version      0.1
-// @description  Inject a split-screen layout into the ChatGPT interface
+// @description  Inject custom style into chat.openai.com
 // @author       You
 // @match        *://chat.openai.com/*
-// @grant        none
+// @grant        GM_addStyle
+// @grant        GM_getResourceText
+// @grant        GM_xmlhttpRequest
 // ==/UserScript==
 
 (function() {
     'use strict';
 
-    // Function to create and inject the split-screen layout
-    function injectSplitScreen() {
-        const mainElement = document.querySelector('main'); // Adjust this selector based on the actual main element
-        mainElement.innerHTML = `
-            <div class="left-pane">
-                <!-- Detailed left pane content goes here -->
-            </div>
-            <div class="right-pane">
-                <!-- Detailed right pane content goes here -->
-            </div>
-        `;
+    // URL of the custom CSS file
+    const customStyleUrl = 'URL_OF_YOUR_CSS_FILE';
 
-        // Apply additional styling or logic if necessary
+    // Function to add the custom style to the page
+    function addCustomStyle(styleString) {
+        GM_addStyle(styleString);
     }
 
-    // Delay execution to ensure the page has loaded
-    window.addEventListener('load', injectSplitScreen);
+    // Fetch and apply the custom style
+    GM_xmlhttpRequest({
+        method: 'GET',
+        url: customStyleUrl,
+        onload: function(response) {
+            addCustomStyle(response.responseText);
+        }
+    });
 })();

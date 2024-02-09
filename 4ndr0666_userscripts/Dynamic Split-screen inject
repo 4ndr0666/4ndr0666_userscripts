@@ -1,0 +1,31 @@
+// ==UserScript==
+// @name         Dynamic Split-Screen Layout Injector
+// @namespace    http://tampermonkey.net/
+// @version      0.1
+// @description  Inject a split-screen layout into the ChatGPT interface
+// @author       You
+// @match        *://chat.openai.com/*
+// @grant        none
+// ==/UserScript==
+
+(function() {
+    'use strict';
+
+    // Function to create and inject the split-screen layout
+    function injectSplitScreen() {
+        const mainElement = document.querySelector('main'); // Adjust this selector based on the actual main element
+        mainElement.innerHTML = `
+            <div class="left-pane">
+                <!-- Detailed left pane content goes here -->
+            </div>
+            <div class="right-pane">
+                <!-- Detailed right pane content goes here -->
+            </div>
+        `;
+
+        // Apply additional styling or logic if necessary
+    }
+
+    // Delay execution to ensure the page has loaded
+    window.addEventListener('load', injectSplitScreen);
+})();

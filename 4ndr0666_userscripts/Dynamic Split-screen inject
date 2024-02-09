@@ -14,7 +14,7 @@
     'use strict';
 
     // URL of the custom CSS file
-    const customStyleUrl = 'URL_OF_YOUR_CSS_FILE';
+    const customStyleUrl = 'https://raw.githubusercontent.com/4ndr0666/4ndr0666_userscripts/main/Css/gpt.css';
 
     // Function to add the custom style to the page
     function addCustomStyle(styleString) {

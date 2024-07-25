@@ -5,7 +5,7 @@
 // @license     GNU AGPLv3
 // @description Creates a scrollable wall of full-size images from any user's instagram page, "tagged" page, or the instagram homepage. Just click the "Load Images" button at the top of the list of images/posts.
 // @match       *://*.instagram.com/*
-// @version     0.2.4.3
+// @version     0.2.4.4
 // @grant       none
 // @run-at      document-start
 // @downloadURL https://update.greasyfork.org/scripts/396337/Instagram%20full-size%20media%20scroll%20wall.user.js
@@ -139,7 +139,7 @@
                 query_id = text.match(/profilePosts\.byUserId\.get.*?queryId:"([a-f0-9]+)"/)?.[1]; //profilePosts.byUserId.get(n))||void 0===s?void 0:s.pagination},queryId:"e5555555555555555555555555555508"
                 let app_id = text.match(/instagramWebDesktopFBAppId='(\d+)'/)?.[1];
                 let asbd_id = text.match(/ASBD_ID='(\d+)'/)?.[1];
-                query_id && notLoaded && loadImages(query_id, query_hash, app_id, asbd_id);
+                query_id && notLoaded && loadImages(query_id, query_hash, doc_id, app_id, asbd_id);
             });
         }
 
@@ -153,7 +153,7 @@
                 query_id = text.match(/profilePosts\.byUserId\.get.*?queryId:"([a-f0-9]+)"/)?.[1]; //profilePosts.byUserId.get(n))||void 0===s?void 0:s.pagination},queryId:"e5555555555555555555555555555508"
                 let app_id = text.match(/instagramWebDesktopFBAppId='(\d+)'/)?.[1];
                 let asbd_id = text.match(/ASBD_ID='(\d+)'/)?.[1];
-                query_id && notLoaded && loadImages(query_id, query_hash, app_id, asbd_id);
+                query_id && notLoaded && loadImages(query_id, query_hash, doc_id, app_id, asbd_id);
             });
         }
 
@@ -168,7 +168,7 @@
                 query_id = text.match(/profilePosts\.byUserId\.get[^;]+queryId:\s*"([a-f0-9]+)"/)?.[1]; //text.match(/l\.pagination\},queryId:"([a-f0-9]+)"/); //const s="05555555555555555555555555555554",E="
                 let app_id = text.match(/instagramWebDesktopFBAppId='(\d+)'/)?.[1];
                 let asbd_id = text.match(/ASBD_ID='(\d+)'/)?.[1];
-                query_id && notLoaded && loadImages(query_id, query_hash, app_id, asbd_id);
+                query_id && notLoaded && loadImages(query_id, query_hash, doc_id, app_id, asbd_id);
             });
         }
 
@@ -354,7 +354,7 @@
                     if (triggerImage.getBoundingClientRect().top - 800 < vh) {
                         bigContainer.onscroll = null;
                         console.log('loading next set of images');
-                        loadImages(query_id, query_hash, app_id, asbd_id, end_cursor);
+                        loadImages(query_id, query_hash, doc_id, app_id, asbd_id, end_cursor);
                     }
 
                 }

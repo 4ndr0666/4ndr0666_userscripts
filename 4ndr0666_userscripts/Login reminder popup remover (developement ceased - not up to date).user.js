@@ -28,10 +28,11 @@
 // @match     https://www.twitch.tv/*
 // @match     https://www.tiktok.com/*/video/*
 // @include   https://www.pinterest.tld/*
-// @version   2.7.17
+// @version   2.7.19
 // @grant     GM.getValue
 // @grant     GM.setValue
 // @grant     GM.registerMenuCommand
+// @grant     GM.unsafeWindow
 // @license   CC-BY-NC-SA-4.0
 // @icon      data:image/x-icon;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgBAMAAACBVGfHAAAAG1BMVEXTrvFOWZTEN4aXQ6vcRGPsbUH2sVjlt7/////5Q3C9AAAAAXRSTlMAQObYZgAAANJJREFUKM+9z7EKwjAQgOFIqbPFpXMUmlHMoKsQsKtgsC9g3WMkWS2V3GN7SZrQwdl/68fdlRBCFtWac74jqYLHsvBUHjiA75lGCm6dMca6BPzg9hSzajPBcQjfbKAJFLXgTJOBqQYMqAx7pnCaDRko060W5xGhwlZk20Y4R6iIaHU3inYG3euGR3UG2b0k/lYg1AABPhLDTQoRbs7D1SYoJcTHCQZvf6PsH+H5GiEcJb0Pd0Q9wdLDXV5PdVyZRF7CYgDMz/6E9xyqdPR/sMiw+gKZRGTvTIJM4gAAAABJRU5ErkJggg==
 // @downloadURL https://update.greasyfork.org/scripts/395497/Login%20reminder%20popup%20remover%20%28developement%20ceased%20-%20not%20up%20to%20date%29.user.js
@@ -192,13 +193,13 @@ function applyUserCss(){//this function adds the css styling for removing popups
     st.textContent="[data-test-id=bottom-right-upsell], [data-test-id=giftWrap], [data-test-id=fullPageSignupModal], [data-test-id=floating-app-upsell], .FNs.XiG.zI7.iyn.Hsu{display: none !important} .article-row{-ms-overflow-style: auto !important;scrollbar-width: auto !important;} ::-webkit-scrollbar {display: block !important;} ::-webkit-scrollbar-thumb {background: grey;}";
   }
   else if(document.location.href.includes("tumblr.com")){
-    st.textContent="div.xw7_H.smX3m, div.Lq1wm{display:none} body{overflow-y: scroll !important}";
+    st.textContent="div.IvzMP{display:none} body{overflow-y: scroll !important}";
   }
   else if(document.location.href.includes("twitch.tv")){
     st.textContent="#twilight-sticky-footer-root{display:none}";
   }
   else if(document.location.href.includes("tiktok.com")){
-    st.textContent="[class*=DivTopBannerAB][type=bottom], div.box-border>.z-2000{display:none}";
+    st.textContent="[class*=DivTopBannerAB][type=bottom], div.box-border>.z-2000, .matrix-smart-wrapper{display:none}";
   }
   document.getElementsByTagName("HEAD")[0].appendChild(st);
   //some sites are evil and try to delete the css that this script adds. The following tries to restore it in the very moment it is removed.
@@ -320,7 +321,8 @@ function checkPageReady(){
       document.body.setAttribute("style", "overflow-y: auto !important");
     }
     else if(document.location.href.includes("tumblr.com")){
-      tumblrDataWallPrevention();
+      tumblrDeClassify();
+      tumblrFreeScroll();
     }
     else if(document.location.href.includes("tiktok.com")){
       interval_0=setInterval(tiktok_waitReady,500);
@@ -824,29 +826,24 @@ function allowVideoReplayIG(imgBox){
   const observer = new MutationObserver(callback);
   observer.observe(imgBox, config);
 }
-function tumblrDataWallPrevention(){
-  console.log("removing login wall attributes");
-  try{
-    let lockedA=document.body.querySelectorAll("[data-login-wall-type]");
-    console.log(lockedA);
-    for(let e of lockedA){
-      e.removeAttribute("data-login-wall-type");
-    }
-    const config = { attributes: false, childList: true, subtree: true };
-    const callback = function(mutationsList, observer) {
-      for(const mutation of mutationsList) {
-        for(let newNode of mutation.addedNodes){
-          let lockedB=newNode.querySelectorAll("[data-login-wall-type]");
-          for(let f of lockedB){
-            f.removeAttribute("data-login-wall-type");
-          }
+function tumblrDeClassify(){
+  const config = { attributes: false, childList: true, subtree: false };
+  const callback = function(mutationsList, observer) {
+    for(const mutation of mutationsList) {
+      for(let newNode of mutation.addedNodes){
+        if(newNode.querySelector("[href^='/auth/']")){
+          newNode.remove();
         }
       }
-    };
-    const observer = new MutationObserver(callback);
-    observer.observe(document.body, config);
-  }
-  catch(err){console.log(err)}
+    }
+  };
+  const observer = new MutationObserver(callback);
+  observer.observe(document.getElementById("glass-container"), config);
+}
+function tumblrFreeScroll(){
+  unsafeWindow.scrollTo=function(){};
+  unsafeWindow.scrollY=function(){};
+  unsafeWindow.scrollX=function(){};
 }
 function tiktok_waitReady(){
   let lockStyle=document.querySelector(".tux-base-dialog.z-2000");

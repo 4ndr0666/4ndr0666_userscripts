@@ -1,25 +1,28 @@
 // ==UserScript==
 // @name         AZNude - Video Search & UI Tweaks
 // @namespace    brazenvoid
-// @version      3.1.1
+// @version      4.0.4
 // @author       brazenvoid
 // @license      GPL-3.0-only
 // @description  Search and cleaners
 // @match        https://www.aznude.com/*
 // @match        https://search.aznude.com/*
-// @require      https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js
-// @require      https://greasyfork.org/scripts/375557-base-resource/code/Base%20Resource.js?version=899286
-// @require      https://greasyfork.org/scripts/416104-brazen-ui-generator/code/Brazen%20UI%20Generator.js?version=899448
-// @require      https://greasyfork.org/scripts/418665-brazen-configuration-manager/code/Brazen%20Configuration%20Manager.js?version=892799
-// @require      https://greasyfork.org/scripts/416105-brazen-base-search-enhancer/code/Brazen%20Base%20Search%20Enhancer.js?version=899428
+// @require      https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js
+// @require      https://update.greasyfork.org/scripts/375557/1244990/Base%20Brazen%20Resource.js
+// @require      https://update.greasyfork.org/scripts/416104/1392660/Brazen%20UI%20Generator.js
+// @require      https://update.greasyfork.org/scripts/418665/1408619/Brazen%20Configuration%20Manager.js
+// @require      https://update.greasyfork.org/scripts/429587/1244644/Brazen%20Item%20Attributes%20Resolver.js
+// @require      https://update.greasyfork.org/scripts/424499/1114815/Brazen%20Paginator.js
+// @require      https://update.greasyfork.org/scripts/416105/1384192/Brazen%20Base%20Search%20Enhancer.js
 // @grant        GM_addStyle
 // @run-at	     document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/375263/AZNude%20-%20Video%20Search%20%20UI%20Tweaks.user.js
 // @updateURL https://update.sleazyfork.org/scripts/375263/AZNude%20-%20Video%20Search%20%20UI%20Tweaks.meta.js
 // ==/UserScript==
 
-GM_addStyle(
-    `#settings-wrapper{background-color:#ffa31a;top:20vh;width:270px}#settings-wrapper .form-group,#settings-wrapper label,#settings-wrapper input[type="checkbox"],#settings-wrapper input[type="radio"]{margin:0}`)
+GM_addStyle(`#settings-wrapper{min-width:300px;width:300px}.bv-button{color:black}.bv-input.bv-text{color:black}.bv-section{font-size:1.5rem}`)
+
+// Globals
 
 const PAGE_HOST_NAME = window.location.host
 const PAGE_PATH_NAME = window.location.pathname
@@ -31,116 +34,169 @@ const IS_VIDEO_PAGE = PAGE_PATH_NAME.startsWith('/azncdn') || PAGE_PATH_NAME.sta
 
 const SCRIPT_PREFIX = 'az-sui-'
 
-const SELECTOR_ITEM = '.albuma,.albuma2'
 const SELECTOR_ITEM_DURATION = '.video-time'
-const SELECTOR_ITEM_LIST = '.browse-type + .container > .row, .browse-celeb-main-content + .container > .row'
+const SELECTOR_ITEM_LIST = '.browse-type + .container > .row, .browse-celeb-main-content + .container > .row, .title-center + .row'
 const SELECTOR_PAGINATION_WRAPPER = '.nav.navbar-nav.navbar-center .lbtn-group.text-mid-center'
+
+// Items
+
+const ITEM_ACTRESS = 'actress'
+
+// Features
+
+const FILTER_ACTRESS_BLACKLIST = 'Actress Blacklist'
+
+const OPTION_ENABLE_ACTRESS_BLACKLIST = 'Enable Actress Blacklist'
 
 const UI_REMOVE_AD_BOXES = 'Remove Ad Video Blocks'
 const UI_REMOVE_RECOMMENDATIONS = 'Remove Recommendation Sections'
-const UI_REMOVE_SCREENSHOTS = 'Hide Screenshots'
+const UI_REMOVE_SCREENSHOTS = 'Remove Screenshots'
+const UI_REMOVE_STORIES = 'Remove Stories'
 
 class AZSearchAndUITweaks extends BrazenBaseSearchEnhancer
 {
-    constructor ()
+    constructor()
     {
-        super(SCRIPT_PREFIX, SELECTOR_ITEM)
+        super({
+            isUserLoggedIn: false,
+            itemDeepAnalysisSelector: '',
+            itemLinkSelector: 'a.video',
+            itemListSelectors: '.browse-type + .container > .row, .browse-celeb-main-content + .container > .row, .title-center + .row',
+            itemNameSelector: 'h4',
+            itemSelectors: '.celebs-boxes',
+            requestDelay: 0,
+            scriptPrefix: 'azn-sui-',
+            tagSelectorGenerator: null,
+        })
 
-        this._configurationManager.
-            addFlagField(UI_REMOVE_AD_BOXES, 'Hides ads disguised inside the videos list.').
-            addFlagField(UI_REMOVE_RECOMMENDATIONS, 'Hides recommendation sections').
-            addFlagField(UI_REMOVE_SCREENSHOTS, 'Hides screenshots from videos on celeb and movie pages.')
-
-        if (IS_SEARCH_PAGE) {
-            this._paginator = BrazenPaginator.create($(SELECTOR_PAGINATION_WRAPPER), SELECTOR_ITEM_LIST, SELECTOR_ITEM, window.location.origin + $('.lbtn-next').prev().attr('href')).
-                onGetPageNoFromUrl((url) => parseInt(url.split('/').pop().replace('.html', ''))).
-                onGetPageUrlFromPageNo(
-                    (newPageNo, paginator) =>
-                        window.location.href.replace(paginator.getCurrentPageNo().toString(), newPageNo.toString())).
-                onGetPaginationElementForPageNo(
-                    (pageNo, paginator) =>
-                        paginator.getPaginationWrapper().find(pageNo === paginator.getCurrentPageNo() ? '#menu' : 'a[href$="' + pageNo + '"]'))
-        }
-
-        this._addPaginationConfiguration()
+        this._setupFeatures()
         this._setupUI()
-        this._setupCompliance()
-        this._setupComplianceFilters()
+        this._setupEvents()
     }
 
-    _removeAdBoxes ()
+    /**
+     * @private
+     */
+    _setupEvents()
     {
-        if (this._configurationManager.getValue(UI_REMOVE_AD_BOXES)) {
-            $('.ad-box-video').each((index, element) => {
-                element.remove()
+        this._onUIBuild(() => {
+
+            this._performOperation(UI_REMOVE_AD_BOXES, () => {
+                $('.ad-box-video').each((index, element) => {
+                    element.remove()
+                })
             })
-        }
-    }
 
-    _removeRecommendationSections ()
-    {
-        if (this._configurationManager.getValue(UI_REMOVE_RECOMMENDATIONS)) {
-            $('.recommended').each((index, element) => {
-                element.remove()
+            this._performOperation(UI_REMOVE_RECOMMENDATIONS, () => {
+                $('.recommended').each((index, element) => {
+                    element.remove()
+                })
             })
-        }
+
+            this._performComplexOperation(
+                UI_REMOVE_STORIES,
+                (enabled) => enabled && IS_SOURCE_PAGE,
+                () => {
+                    $('.browse-celeb-main-content').each((_i, element) => {
+                        let node = $(element)
+                        if (node.find('h4 > span').text().trim() === 'story:') {
+                            node.hide()
+                            node.next().hide()
+                        }
+                    })
+                })
+
+            this._performComplexOperation(
+                OPTION_ENABLE_ACTRESS_BLACKLIST,
+                (enabled) => enabled && this._getConfig(FILTER_ACTRESS_BLACKLIST).length && IS_SOURCE_PAGE,
+                () => {
+                    let blacklist = this._configurationManager.getField(FILTER_ACTRESS_BLACKLIST).optimized
+                    $('.browse-celeb-main-content').each((_i, element) => {
+                        let node = $(element)
+                        if (blacklist.includes(node.find('a.page-link').text().toLowerCase().trim())) {
+                            node.hide()
+                            node.next().hide()
+                        }
+                    })
+                })
+        })
+
+        this._onUIBuilt(() => this._uiGen.getSelectedSection()[0].userScript = this)
     }
 
-    _setupCompliance ()
+    /**
+     * @private
+     */
+    _setupFeatures()
     {
-        this._onGetItemLists = () => $(SELECTOR_ITEM_LIST)
+        this._configurationManager
+            .addFlagField(UI_REMOVE_AD_BOXES, 'Hides ads disguised inside the videos list.')
+            .addFlagField(UI_REMOVE_RECOMMENDATIONS, 'Hides recommendation sections')
+            .addFlagField(UI_REMOVE_SCREENSHOTS, 'Hides screenshots from videos on celeb and movie pages.')
+            .addFlagField(UI_REMOVE_STORIES, 'Hides stories from celeb pages.')
+            .addFlagField(OPTION_ENABLE_ACTRESS_BLACKLIST, 'Applies the actress blacklist.')
+            .addRulesetField(FILTER_ACTRESS_BLACKLIST, 5, 'Hide videos and sections of specified actresses', null, null, (rules) => {
+                let optimizedRules = []
+                for (let i = 0; i < rules.length; i++) {
+                    optimizedRules[i] = rules[i].trim().toLowerCase()
+                }
+                return optimizedRules
+            })
 
-        this._onGetItemName = (item) => item.children('a > h4').text() + ' ' + item.children('a > p').text()
-    }
+        this._itemAttributesResolver.addAttribute(ITEM_ACTRESS, (item) => item.find('h4').text().trim().toLowerCase() || null)
 
-    _setupComplianceFilters ()
-    {
+        this._setupPaginator(IS_SEARCH_PAGE, {
+            itemListSelector: SELECTOR_ITEM_LIST,
+            lastPageUrl: window.location.origin + $('.lbtn-next').prev().attr('href'),
+            onGetPageNoFromUrl: (url) => parseInt(url.split('/').pop().replace('.html', '')),
+            onGetPageUrlFromPageNo: (newPageNo, paginator) => window.location.href.replace(paginator.getCurrentPageNo().toString(), newPageNo.toString()),
+            onGetPaginationElementForPageNo: (pageNo, paginator) => paginator.getPaginationWrapper().find(pageNo === paginator.getCurrentPageNo() ? '#menu' : 'a[href$="' + pageNo + '"]'),
+            paginationWrapper: $(SELECTOR_PAGINATION_WRAPPER)
+        })
+
         this._addItemDurationRangeFilter(SELECTOR_ITEM_DURATION)
+        this._addItemComplexComplianceFilter(UI_REMOVE_SCREENSHOTS, (value) => value && IS_SOURCE_PAGE, (item) => Validator.isChildMissing(item, 'a.picture'))
         this._addItemComplexComplianceFilter(
-            UI_REMOVE_SCREENSHOTS, (value) => value && IS_SOURCE_PAGE, (item) => Validator.isChildMissing(item, 'a.picture'))
+            FILTER_ACTRESS_BLACKLIST,
+            (actresses) => this._getConfig(OPTION_ENABLE_ACTRESS_BLACKLIST) && actresses.length,
+            (item, actresses) => !actresses.includes(this._get(item, ITEM_ACTRESS)),
+        )
     }
 
-    _setupUI ()
+    _setupUI()
     {
-        this._onBeforeUIBuild = () => {
-            this._removeAdBoxes()
-            this._removeRecommendationSections()
-        }
-
-        this._onUIBuild = () =>
-            this._uiGen.createSettingsSection().append([
-                this._uiGen.createTabsSection(['Filters', 'UI', 'Pagination', 'Global'], [
-                    this._uiGen.createTabPanel('Filters', true).append([
-                        this._configurationManager.createElement(FILTER_DURATION_RANGE),
-                        this._configurationManager.createElement(UI_REMOVE_SCREENSHOTS),
-                        this._uiGen.createSeparator(),
-                        this._configurationManager.createElement(OPTION_DISABLE_COMPLIANCE_VALIDATION),
-                    ]),
-                    this._uiGen.createTabPanel('UI').append([
-                        this._configurationManager.createElement(UI_REMOVE_AD_BOXES),
-                        this._configurationManager.createElement(UI_REMOVE_RECOMMENDATIONS),
-                    ]),
-                    this._uiGen.createTabPanel('Pagination').append([
-                        this._configurationManager.createElement(CONFIG_PAGINATOR_THRESHOLD),
-                        this._configurationManager.createElement(CONFIG_PAGINATOR_LIMIT),
-                    ]),
-                    this._uiGen.createTabPanel('Global').append([
-                        this._configurationManager.createElement(OPTION_ALWAYS_SHOW_SETTINGS_PANE),
-                        this._uiGen.createSeparator(),
-                        this._createSettingsBackupRestoreFormActions(),
-                    ]),
+        this._userInterface = [
+            this._uiGen.createTabsSection(['Filters', 'UI', 'Global'], [
+                this._uiGen.createTabPanel('Filters', true).append([
+                    this._configurationManager.createElement(FILTER_DURATION_RANGE),
+                    this._configurationManager.createElement(OPTION_ENABLE_ACTRESS_BLACKLIST),
+                    this._configurationManager.createElement(FILTER_ACTRESS_BLACKLIST),
+                    this._uiGen.createSeparator(),
+                    this._configurationManager.createElement(OPTION_DISABLE_COMPLIANCE_VALIDATION),
                 ]),
-                this._createSettingsFormActions(),
-                this._uiGen.createSeparator(),
-                this._uiGen.createStatisticsFormGroup(FILTER_DURATION_RANGE, 'Duration'),
-                this._uiGen.createStatisticsFormGroup(UI_REMOVE_SCREENSHOTS, 'Screenshots'),
-                this._uiGen.createSeparator(),
-                this._uiGen.createStatusSection(),
-            ])
-
-        this._onAfterUIBuild = () => {
-            this._uiGen.getSelectedSection()[0].userScript = this
-        }
+                this._uiGen.createTabPanel('UI').append([
+                    this._configurationManager.createElement(UI_REMOVE_AD_BOXES),
+                    this._configurationManager.createElement(UI_REMOVE_RECOMMENDATIONS),
+                    this._configurationManager.createElement(UI_REMOVE_SCREENSHOTS),
+                    this._configurationManager.createElement(UI_REMOVE_STORIES),
+                    this._uiGen.createSeparator(),
+                    this._configurationManager.createElement(CONFIG_PAGINATOR_THRESHOLD),
+                    this._configurationManager.createElement(CONFIG_PAGINATOR_LIMIT),
+                ]),
+                this._uiGen.createTabPanel('Global').append([
+                    this._configurationManager.createElement(OPTION_ALWAYS_SHOW_SETTINGS_PANE),
+                    this._uiGen.createSeparator(),
+                    this._createSettingsBackupRestoreFormActions(),
+                ]),
+            ]),
+            this._createSettingsFormActions(),
+            this._uiGen.createSeparator(),
+            this._uiGen.createStatisticsFormGroup(FILTER_DURATION_RANGE, 'Duration'),
+            this._uiGen.createStatisticsFormGroup(FILTER_TEXT_BLACKLIST, 'Actress Blacklist'),
+            this._uiGen.createStatisticsFormGroup(UI_REMOVE_SCREENSHOTS, 'Screenshots'),
+            this._uiGen.createSeparator(),
+            this._uiGen.createStatusSection(),
+        ]
     }
 }
 
